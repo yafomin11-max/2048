@@ -12,8 +12,8 @@ CVETA = {
 def main(page: ft.Page):
     page.title = "2048 Beskonechnost"
     page.bgcolor = "#faf8ef"
-    # Isspravlenie oshibki: ispolzuem stroki dlya viravnivaniya
-    page.vertical_alignment = "center" 
+    # Isspravlenie: ispolzuem prostuyu stroku, eto vsegda rabotaet
+    page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
 
     pole = [[0] * 4 for _ in range(4)]
@@ -60,7 +60,6 @@ def main(page: ft.Page):
             dobavit_chislo()
             obnovit_vizual()
 
-    # Sozdaem setku
     grid = ft.GridView(
         runs_count=4,
         max_extent=80,
@@ -71,8 +70,8 @@ def main(page: ft.Page):
     for _ in range(16):
         c = ft.Container(
             content=ft.Text("", size=25, weight="bold"),
-            # Isspravlenie oshibki tut: stroka vmesto ft.alignment
-            alignment=ft.alignment.Center(0, 0), 
+            # Isspravlenie: prosto stroka "center" dlya alignment vnutri containera
+            alignment=ft.alignment.center, 
             border_radius=5,
         )
         cells.append(c)
@@ -80,7 +79,6 @@ def main(page: ft.Page):
 
     score_text = ft.Text("Score: 0", size=30, weight="bold", color="#776e65")
 
-    # Knopki upravleniya
     controls = ft.Row([
         ft.ElevatedButton("⬅️", on_click=lambda _: move(0)),
         ft.ElevatedButton("⬆️", on_click=lambda _: move(3)),
@@ -90,7 +88,7 @@ def main(page: ft.Page):
 
     page.add(
         score_text,
-        ft.Container(grid, width=350, height=350, bgcolor="#bbada0", padding=10, border_radius=10),
+        ft.Container(grid, width=340, height=340, bgcolor="#bbada0", padding=10, border_radius=10),
         controls
     )
 
@@ -99,6 +97,5 @@ def main(page: ft.Page):
     obnovit_vizual()
 
 if __name__ == "__main__":
-    # Vazhno dlya Render
     port = int(os.getenv("PORT", 8080))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port)
