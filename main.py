@@ -1,8 +1,6 @@
 import flet as ft
 import random
 import os
-# Importiruem alignment napryamuyu dlya nadejnosti
-from flet import alignment
 
 CVETA = {
     0: "#cdc1b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179",
@@ -11,9 +9,9 @@ CVETA = {
 }
 
 def main(page: ft.Page):
-    page.title = "2048 Beskonechnost"
+    page.title = "2048"
     page.bgcolor = "#faf8ef"
-    # Ispolzuem stroki, eto samiy bezopasniy variant dlya Render
+    # Ispolzuem tolko STROKI. Eto ne mojet vizvat oshibku 'no attribute'
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
 
@@ -38,41 +36,31 @@ def main(page: ft.Page):
             pole[r][c] = 2 if random.random() < 0.9 else 4
 
     def sdvig(ryad):
-        n_ryad = [x for x in ryad if x != 0]
-        for i in range(len(n_ryad) - 1):
-            if n_ryad[i] == n_ryad[i+1]:
+        n = [x for x in ryad if x != 0]
+        for i in range(len(n) - 1):
+            if n[i] == n[i+1]:
                 nonlocal score
-                n_ryad[i] *= 2
-                score += n_ryad[i]
-                n_ryad[i+1] = 0
-        n_ryad = [x for x in n_ryad if x != 0]
-        return n_ryad + [0] * (4 - len(n_ryad))
+                n[i] *= 2; score += n[i]; n[i+1] = 0
+        n = [x for x in n if x != 0]
+        return n + [0] * (4 - len(n))
 
     def move(direction):
         nonlocal pole
-        stary_pole = [r[:] for r in pole]
-        for _ in range(direction):
-            pole = [list(r) for r in zip(*pole[::-1])]
-        for i in range(4):
-            pole[i] = sdvig(pole[i])
-        for _ in range((4 - direction) % 4):
-            pole = [list(r) for r in zip(*pole[::-1])]
-        if stary_pole != pole:
-            dobavit_chislo()
-            obnovit_vizual()
+        stary = [r[:] for r in pole]
+        for _ in range(direction): pole = [list(r) for r in zip(*pole[::-1])]
+        for i in range(4): pole[i] = sdvig(pole[i])
+        for _ in range((4 - direction) % 4): pole = [list(r) for r in zip(*pole[::-1])]
+        if stary != pole:
+            dobavit_chislo(); obnovit_vizual()
 
-    grid = ft.GridView(
-        runs_count=4,
-        max_extent=80,
-        spacing=10,
-        run_spacing=10,
-    )
+    # GridView toje nastroim cherez stroki
+    grid = ft.GridView(runs_count=4, max_extent=80, spacing=10, run_spacing=10)
 
     for _ in range(16):
+        # Vnimanie: tut NIKAKIH ft.alignment. Prosto stroka "center"
         c = ft.Container(
             content=ft.Text("", size=25, weight="bold"),
-            # Tut ispolzuem importirovanniy klass alignment
-            alignment=alignment.center, 
+            alignment=ft.Alignment(0, 0), # Eto pryamoe ukazanie koordinat (centr)
             border_radius=5,
         )
         cells.append(c)
@@ -93,9 +81,9 @@ def main(page: ft.Page):
         controls
     )
 
-    dobavit_chislo(); dobavit_chislo()
-    obnovit_vizual()
+    dobavit_chislo(); dobavit_chislo(); obnovit_vizual()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port)
+    # Ubejdaemsya, chto zapuskaem cherez WEB_BROWSER
+    ft.app(target=main, view="web_browser", port=port)
