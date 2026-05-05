@@ -1,8 +1,9 @@
 import flet as ft
 import random
 import os
+# Importiruem alignment napryamuyu dlya nadejnosti
+from flet import alignment
 
-# Cveta dlya blokov
 CVETA = {
     0: "#cdc1b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179",
     16: "#f59563", 32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72",
@@ -12,7 +13,7 @@ CVETA = {
 def main(page: ft.Page):
     page.title = "2048 Beskonechnost"
     page.bgcolor = "#faf8ef"
-    # Isspravlenie: ispolzuem prostuyu stroku, eto vsegda rabotaet
+    # Ispolzuem stroki, eto samiy bezopasniy variant dlya Render
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
 
@@ -70,8 +71,8 @@ def main(page: ft.Page):
     for _ in range(16):
         c = ft.Container(
             content=ft.Text("", size=25, weight="bold"),
-            # Isspravlenie: prosto stroka "center" dlya alignment vnutri containera
-            alignment=ft.alignment.center, 
+            # Tut ispolzuem importirovanniy klass alignment
+            alignment=alignment.center, 
             border_radius=5,
         )
         cells.append(c)
@@ -92,8 +93,7 @@ def main(page: ft.Page):
         controls
     )
 
-    dobavit_chislo()
-    dobavit_chislo()
+    dobavit_chislo(); dobavit_chislo()
     obnovit_vizual()
 
 if __name__ == "__main__":
