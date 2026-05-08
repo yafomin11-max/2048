@@ -10,12 +10,11 @@ CVETA = {
     256: "#edcc61", 512: "#edc850", 1024: "#edc53f", 2048: "#edc22e"
 }
 
-# --- НОВОЕ: РАБОТА С БАЗОЙ ДАННЫХ ---
+# --- РАБОТА С БАЗОЙ ДАННЫХ ---
 def init_db():
     """создает файл базы данных, если его еще нет"""
     conn = sqlite3.connect("leaderboard.db", check_same_thread=False)
     cursor = conn.cursor()
-    # создаем таблицу: имя игрока и его лучший счет
     cursor.execute("CREATE TABLE IF NOT EXISTS players (name TEXT, score INTEGER)")
     conn.commit()
     return conn, cursor
@@ -23,8 +22,8 @@ def init_db():
 db_conn, db_cursor = init_db()
 
 def save_score(name, score):
-    """сохраняет результат в базу"""
-    if not name: name = "Аноним"
+    """сохраняет результат в базу данных"""
+    if not name or name.strip() == "": name = "Игрок"
     db_cursor.execute("INSERT INTO players VALUES (?, ?)", (name, score))
     db_conn.commit()
 
@@ -36,49 +35,57 @@ def get_top_scores():
 
 def main(page: ft.Page):
     # настройки окна
-    page.title = "2048"  # название
-    page.bgcolor = "#faf8ef"  # цвет фона
-    page.vertical_alignment = "center"  # всё по центру
+    page.title = "2048"
+    page.bgcolor = "#faf8ef"
+    page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
+    page.theme_mode = ft.ThemeMode.LIGHT # форсируем светлую тему для красоты
 
     # переменные игры
     pole = [[0] * 4 for _ in range(4)]
     score = 0
     cells = []
-    user_name = "" # имя игрока для лидерборда
 
-    # --- НОВОЕ: ФУНКЦИЯ ПЕРЕЗАПУСКА ---
+    # --- ФУНКЦИИ УПРАВЛЕНИЯ ---
+
     def restart_game(e):
-        """полностью сбрасывает игру до начального состояния"""
+        """сбрасывает игру и сохраняет текущий результат"""
         nonlocal pole, score
-        # перед сбросом сохраняем текущий результат, если он больше 0
         if score > 0:
             save_score(name_input.value, score)
         
-        pole = [[0] * 4 for _ in range(4)] # обнуляем матрицу
-        score = 0 # обнуляем счет
-        dobavit_chislo() # добавляем две новые плитки
+        pole = [[0] * 4 for _ in range(4)]
+        score = 0
         dobavit_chislo()
-        obnovit_vizual() # обновляем экран
+        dobavit_chislo()
+        obnovit_vizual()
 
-    # --- НОВОЕ: ТАБЛИЦА ЛИДЕРОВ ---
     def show_leaderboard(e):
-        """показывает всплывающее окно с топ-игроками"""
+        """показывает всплывающее окно с рекордами (исправлено под новые версии Flet)"""
         tops = get_top_scores()
-        items = [ft.Text(f"{n} — {s} очков", size=18) for n, s in tops]
+        items = [ft.Text(f"{n} — {s} очков", size=18, weight="bold") for n, s in tops]
         
         if not items:
-            items = [ft.Text("Пока рекордов нет! Будь первым!", italic=True)]
+            items = [ft.Text("Рекордов пока нет. Будь первым!", italic=True)]
+
+        def close_dlg(e):
+            dialog.open = False
+            page.update()
 
         dialog = ft.AlertDialog(
             title=ft.Text("Топ игроков 🏆"),
-            content=ft.Column(items, tight=True),
-            actions=[ft.TextButton("Закрыть", on_click=lambda _: page.close(dialog))]
+            content=ft.Column(items, tight=True, width=200),
+            actions=[
+                ft.TextButton("Понятно", on_click=close_dlg)
+            ],
         )
-        page.open(dialog)
+
+        page.dialog = dialog
+        dialog.open = True
+        page.update()
 
     def obnovit_vizual():
-        """обновляет экран, меняет цвета и цифры во всех клетках"""
+        """обновляет экран: цифры и цвета"""
         for i in range(16):
             r, c = i // 4, i % 4
             val = pole[r][c]
@@ -90,14 +97,14 @@ def main(page: ft.Page):
         page.update()
 
     def dobavit_chislo():
-        """добавляет новую цифру в случайную пустую клетку"""
+        """ставит 2 или 4 в пустую клетку"""
         pustie = [(r, c) for r in range(4) for c in range(4) if pole[r][c] == 0]
         if pustie:
             r, c = random.choice(pustie)
             pole[r][c] = 2 if random.random() < 0.9 else 4
 
     def sdvig(ryad):
-        """сдвигает ряд и объединяет одинаковые числа"""
+        """логика слияния чисел"""
         n = [x for x in ryad if x != 0]
         for i in range(len(n) - 1):
             if n[i] == n[i + 1]:
@@ -109,7 +116,7 @@ def main(page: ft.Page):
         return n + [0] * (4 - len(n))
 
     def move(direction):
-        """обрабатывает нажатие кнопок: двигает плитки"""
+        """двигает плитки через поворот матрицы"""
         nonlocal pole
         stary = [r[:] for r in pole]
         for _ in range(direction):
@@ -122,7 +129,8 @@ def main(page: ft.Page):
             dobavit_chislo()
             obnovit_vizual()
 
-    # СОЗДАНИЕ КЛЕТОК
+    # ИНТЕРФЕЙС
+
     grid = ft.GridView(runs_count=4, max_extent=80, spacing=10, run_spacing=10)
     for _ in range(16):
         c = ft.Container(
@@ -133,39 +141,36 @@ def main(page: ft.Page):
         cells.append(c)
         grid.controls.append(c)
 
-    # --- НОВОЕ: ПОЛЯ ВВОДА И КНОПКИ ---
     score_text = ft.Text("Score: 0", size=30, weight="bold", color="#776e65")
-    
-    # Поле для ввода имени (чтобы попасть в лидерборд)
-    name_input = ft.TextField(label="Твоё имя", value="Игрок", width=150, text_size=14)
+    name_input = ft.TextField(label="Имя", value="Ярослав", width=120, height=40, text_size=14)
 
-    # Кнопки управления (стрелочки)
+    # Кнопки со стрелками (эмодзи - самый надежный вариант)
     controls = ft.Row([
-        ft.ElevatedButton("⬅️", on_click=lambda _: move(0)),
-        ft.ElevatedButton("⬆️", on_click=lambda _: move(3)),
-        ft.ElevatedButton("⬇️", on_click=lambda _: move(1)),
-        ft.ElevatedButton("➡️", on_click=lambda _: move(2)),
+        ft.ElevatedButton("⬅️", on_click=lambda _: move(0), style=ft.ButtonStyle(padding=10)),
+        ft.ElevatedButton("⬆️", on_click=lambda _: move(3), style=ft.ButtonStyle(padding=10)),
+        ft.ElevatedButton("⬇️", on_click=lambda _: move(1), style=ft.ButtonStyle(padding=10)),
+        ft.ElevatedButton("➡️", on_click=lambda _: move(2), style=ft.ButtonStyle(padding=10)),
     ], alignment="center")
 
-    # Дополнительные кнопки (Старт заново и Лидерборд)
-    extra_buttons = ft.Row([
+    # Дополнительные кнопки
+    extra_menu = ft.Row([
         ft.ElevatedButton("🔄 Заново", on_click=restart_game, bgcolor="#8f7a66", color="white"),
         ft.ElevatedButton("🏆 Лидеры", on_click=show_leaderboard),
     ], alignment="center")
 
-    # ВСЁ ВМЕСТЕ НА ЭКРАНЕ
     page.add(
-        ft.Row([score_text, name_input], alignment="center"), # Счет и имя в одну строку
+        ft.Row([score_text, name_input], alignment="center", vertical_alignment="center"),
         ft.Container(grid, width=340, height=340, bgcolor="#bbada0", padding=10, border_radius=10),
+        ft.Divider(height=10, color="transparent"),
         controls,
-        extra_buttons # Кнопки перезапуска и лидеров
+        ft.Divider(height=10, color="transparent"),
+        extra_menu
     )
 
-    # ЗАПУСК ИГРЫ
+    # Старт игры
     dobavit_chislo()
     dobavit_chislo()
     obnovit_vizual()
-
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8080))
