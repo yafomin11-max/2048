@@ -141,10 +141,10 @@ def main(page: ft.Page):
 
     # Кнопки управления (стрелочки)
     controls = ft.Row([
-        ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: move(0)),
-        ft.IconButton(ft.icons.ARROW_UPWARD, on_click=lambda _: move(3)),
-        ft.IconButton(ft.icons.ARROW_DOWNWARD, on_click=lambda _: move(1)),
-        ft.IconButton(ft.icons.ARROW_FORWARD, on_click=lambda _: move(2)),
+        ft.ElevatedButton("⬅️", on_click=lambda _: move(0)),
+        ft.ElevatedButton("⬆️", on_click=lambda _: move(3)),
+        ft.ElevatedButton("⬇️", on_click=lambda _: move(1)),
+        ft.ElevatedButton("➡️", on_click=lambda _: move(2)),
     ], alignment="center")
 
     # Дополнительные кнопки (Старт заново и Лидерборд)
